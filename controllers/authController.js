@@ -1,5 +1,6 @@
 const User = require('../models/userModel');
 const CryptoJS = require('crypto-js');
+const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
   const user = new User({
@@ -10,7 +11,19 @@ exports.register = async (req, res) => {
 
   try {
     const savedUser = await user.save();
-    res.status(201).json(savedUser);
+
+    const accessToken = jwt.sign(
+      {
+        id: savedUser._id,
+        isAdmin: savedUser.isAdmin,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_LIFESPAN }
+    );
+
+    const { password, ...others } = savedUser._doc;
+
+    res.status(201).json({ ...others, accessToken });
   } catch (error) {
     res.status(500).json(error);
   }
@@ -34,9 +47,18 @@ exports.login = async (req, res) => {
       return res.status(404).json({ message: 'Invalid credentials' });
     }
 
+    const accessToken = jwt.sign(
+      {
+        id: user._id,
+        isAdmin: user.isAdmin,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_LIFESPAN }
+    );
+
     const { password, ...others } = user._doc;
 
-    res.status(200).json(others);
+    res.status(200).json({ ...others, accessToken });
   } catch (error) {
     res.status(404).json(error);
   }
