@@ -26,3 +26,12 @@ exports.updateUser = async (req, res) => {
     }
   }
 };
+
+exports.deleteUser = async (req, res) => {
+  try {
+    await User.findByIdAndDelete(eq.params.id);
+    res.status(200).json({ message: 'User has been deleted.' });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
