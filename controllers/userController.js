@@ -1,6 +1,55 @@
 const User = require('../models/userModel');
 const CryptoJS = require('crypto-js');
 
+exports.getUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    const { password, ...others } = user._doc;
+
+    res.status(200).json(others);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
+
+exports.getAllUser = async (req, res) => {
+  try {
+    const users = await User.find().select('-password');
+
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
+
+exports.getUserStats = async (req, res) => {
+  const date = new Date();
+
+  const lastYear = new Date(date.setFullYear(date.getFullYear() - 1));
+
+  try {
+    const data = await User.aggregate([
+      {
+        $match: { createdAt: { $gte: lastYear } },
+      },
+      {
+        $project: {
+          month: { $month: '$createdAt' },
+        },
+      },
+
+      {
+        $group: { _id: '$month', total: { $sum: 1 } },
+      },
+    ]);
+
+    res.status(200).json(data);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+};
+
 exports.updateUser = async (req, res) => {
   if (req.user.id === req.params.id || req.user.isAdmin) {
     if (req.body.password) {
@@ -29,7 +78,7 @@ exports.updateUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
   try {
-    await User.findByIdAndDelete(eq.params.id);
+    await User.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: 'User has been deleted.' });
   } catch (error) {
     res.status(500).json(error);
