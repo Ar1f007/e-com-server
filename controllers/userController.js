@@ -14,8 +14,11 @@ exports.getUser = async (req, res) => {
 };
 
 exports.getAllUser = async (req, res) => {
+  const query = req.query.new;
   try {
-    const users = await User.find().select('-password');
+    const users = query
+      ? await User.find().sort({ _id: -1 }).limit(5).select('-password')
+      : await User.find().select('-password');
 
     res.status(200).json(users);
   } catch (error) {

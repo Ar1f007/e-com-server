@@ -4,12 +4,14 @@ const {
   getUserOrders,
   deleteOrder,
   getMonthlyIncome,
+  getAllOrders,
 } = require('../controllers/orderController');
 const { verifyAdmin } = require('../middlewares/verifyAdmin');
 const { verifyToken } = require('../middlewares/verifyToken');
 
 const router = require('express').Router();
 
+router.get('/', verifyToken, verifyAdmin, getAllOrders);
 router.get('/monthlyIncome', verifyToken, verifyAdmin, getMonthlyIncome);
 
 router.use(verifyToken);

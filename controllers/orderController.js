@@ -1,6 +1,9 @@
 const Order = require('../models/orderModel');
 
-const Cart = require('../models/cartModel');
+exports.getAllOrders = async (req, res) => {
+  const orders = await Order.find();
+  res.status(200).json(orders);
+};
 
 exports.addOrder = async (req, res) => {
   const newOrder = new Order(req.body);
@@ -49,13 +52,20 @@ exports.getUserOrders = async (req, res) => {
 };
 
 exports.getMonthlyIncome = async (req, res) => {
+  const productId = req.query.productId;
+
   const date = new Date();
   const lastMonth = new Date(date.setMonth(date.getMonth() - 1));
   const previousMonth = new Date(new Date().setMonth(lastMonth.getMonth() - 1));
 
   try {
     const income = await Order.aggregate([
-      { $match: { createdAt: { $gte: previousMonth } } },
+      {
+        $match: {
+          createdAt: { $gte: previousMonth },
+          ...(productId && { products: { $elemMatch: { productId } } }),
+        },
+      },
       {
         $project: {
           month: { $month: '$createdAt' },
@@ -70,7 +80,6 @@ exports.getMonthlyIncome = async (req, res) => {
         },
       },
     ]);
-
     res.status(200).json(income);
   } catch (error) {
     res.status(500).json(error);
